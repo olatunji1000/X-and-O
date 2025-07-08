@@ -1,92 +1,133 @@
 # X-and-O
-A simple and interactive implementation of the classic Tic-Tac-Toe game.
 package XandO;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 
 public class PlayerSetupScreen extends JFrame {
     private JTextField player1Field;
     private JTextField player2Field;
+    private JComboBox<String> avatar1Combo;
+    private JComboBox<String> avatar2Combo;
+    private JCheckBox timedModeToggle;
     private boolean vsComputer;
     private boolean timedMode;
 
-    // Updated constructor with timedMode
+    private static final int MAX_NAME_LENGTH = 12;
+
     public PlayerSetupScreen(boolean vsComputer, boolean timedMode) {
         this.vsComputer = vsComputer;
         this.timedMode = timedMode;
         setTitle("Player Setup");
-
         setLayout(new BorderLayout());
 
         // Title
-        JLabel titleLabel = new JLabel("Enter Player Name(s)", JLabel.CENTER);
+        JLabel titleLabel = new JLabel("Enter Player Details", JLabel.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 22));
         titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 0, 10, 0));
         add(titleLabel, BorderLayout.NORTH);
 
-        // Center inputs
-        JPanel inputPanel = new JPanel(new GridLayout(4, 1, 10, 10));
+        // Center input panel
+        JPanel inputPanel = new JPanel(new GridLayout(10, 1, 10, 5));
         inputPanel.setBorder(BorderFactory.createEmptyBorder(20, 50, 20, 50));
 
-        // Player 1 label and field (with size control)
-        inputPanel.add(new JLabel("Player 1 Name:"));
-        JPanel p1Wrapper = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // Player 1 input
+        inputPanel.add(new JLabel("Player 1 Name (max " + MAX_NAME_LENGTH + " chars):"));
         player1Field = new JTextField();
-        player1Field.setFont(new Font("Arial", Font.PLAIN, 18));
+        JLabel p1CharCount = new JLabel("0/" + MAX_NAME_LENGTH);
+        player1Field.setFont(new Font("Arial", Font.PLAIN, 16));
         player1Field.setPreferredSize(new Dimension(250, 30));
-        p1Wrapper.add(player1Field);
-        inputPanel.add(p1Wrapper);
+        player1Field.addKeyListener(new KeyAdapter() {
+            public void keyReleased(KeyEvent e) {
+                p1CharCount.setText(player1Field.getText().length() + "/" + MAX_NAME_LENGTH);
+            }
+        });
+        inputPanel.add(player1Field);
+        inputPanel.add(p1CharCount);
 
-        // Player 2 only if not vsComputer
+        // Avatar selection for Player 1
+        avatar1Combo = new JComboBox<>(new String[]{"😀 Default", "😎 Cool", "👾 Alien", "🐱 Cat"});
+        inputPanel.add(new JLabel("Choose Player 1 Avatar:"));
+        inputPanel.add(avatar1Combo);
+
         if (!vsComputer) {
-            inputPanel.add(new JLabel("Player 2 Name:"));
-            JPanel p2Wrapper = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            // Player 2 input
+            inputPanel.add(new JLabel("Player 2 Name (max " + MAX_NAME_LENGTH + " chars):"));
             player2Field = new JTextField();
-            player2Field.setFont(new Font("Arial", Font.PLAIN, 18));
+            JLabel p2CharCount = new JLabel("0/" + MAX_NAME_LENGTH);
+            player2Field.setFont(new Font("Arial", Font.PLAIN, 16));
             player2Field.setPreferredSize(new Dimension(250, 30));
-            p2Wrapper.add(player2Field);
-            inputPanel.add(p2Wrapper);
+            player2Field.addKeyListener(new KeyAdapter() {
+                public void keyReleased(KeyEvent e) {
+                    p2CharCount.setText(player2Field.getText().length() + "/" + MAX_NAME_LENGTH);
+                }
+            });
+            inputPanel.add(player2Field);
+            inputPanel.add(p2CharCount);
+
+            // Avatar selection for Player 2
+            avatar2Combo = new JComboBox<>(new String[]{"😀 Default", "😎 Cool", "👾 Alien", "🐱 Cat"});
+            inputPanel.add(new JLabel("Choose Player 2 Avatar:"));
+            inputPanel.add(avatar2Combo);
         }
+
+        // Timed mode toggle
+        timedModeToggle = new JCheckBox("Enable Timed Mode", timedMode);
+        inputPanel.add(timedModeToggle);
 
         add(inputPanel, BorderLayout.CENTER);
 
-        // Continue button
+        // Button panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton continueButton = new JButton("Continue");
-        continueButton.setFont(new Font("Arial", Font.PLAIN, 20));
-        continueButton.setBackground(new Color(34, 139, 34));
+        continueButton.setFont(new Font("Arial", Font.BOLD, 18));
+        continueButton.setBackground(new Color(0, 120, 215));
         continueButton.setForeground(Color.WHITE);
-        add(continueButton, BorderLayout.SOUTH);
+        getRootPane().setDefaultButton(continueButton); // Press Enter to continue
 
-        // Button action
-        continueButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                String player1 = player1Field.getText().trim();
-                String player2 = (vsComputer ? "Computer" : player2Field.getText().trim());
+        buttonPanel.add(continueButton);
+        add(buttonPanel, BorderLayout.SOUTH);
 
-                if (player1.isEmpty() || (!vsComputer && player2.isEmpty())) {
-                    JOptionPane.showMessageDialog(PlayerSetupScreen.this,
-                            "Please enter all required names.",
-                            "Input Error",
-                            JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
+        // Continue button action
+        continueButton.addActionListener(e -> {
+            String player1 = player1Field.getText().trim();
+            String player2 = vsComputer ? "Computer" : player2Field.getText().trim();
+            String avatar1 = (String) avatar1Combo.getSelectedItem();
+            String avatar2 = vsComputer ? "🤖" : (String) avatar2Combo.getSelectedItem();
+            boolean timed = timedModeToggle.isSelected();
 
-                dispose();
-                if (vsComputer) {
-                    new GameScreenAI(player1, timedMode);  // Pass timed mode
-                } else {
-                    new GameScreen(player1, player2);
-                }
+            // Validation
+            if (player1.isEmpty() || (!vsComputer && player2.isEmpty())) {
+                JOptionPane.showMessageDialog(this,
+                        "Please enter all required names.",
+                        "Input Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (player1.length() > MAX_NAME_LENGTH || (!vsComputer && player2.length() > MAX_NAME_LENGTH)) {
+                JOptionPane.showMessageDialog(this,
+                        "Player names must be at most " + MAX_NAME_LENGTH + " characters.",
+                        "Name Too Long",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            dispose();
+
+            // Simulated use of avatars (optional in actual game)
+            if (vsComputer) {
+                new GameScreenAI(player1 + " " + avatar1, timed);  // Inject avatar emoji
+            } else {
+                new GameScreen(player1 + " " + avatar1, player2 + " " + avatar2);
             }
         });
 
-        // Final window setup
-        setSize(500, vsComputer ? 350 : 400);
+        // Frame setup
+        setSize(550, vsComputer ? 500 : 600);
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
         setVisible(true);
     }
 }
